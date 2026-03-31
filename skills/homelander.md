@@ -1,6 +1,6 @@
 ---
 name: homelander
-description: Use when auditing or aligning a frontend repository against the project folder structure, naming conventions, and architecture standards. Triggers on requests to organize, standardize, or restructure a repo.
+description: Use when auditing or aligning a frontend repository against folder structure, naming conventions, and architecture standards. Auto-detects framework (React, Astro, Next.js). Triggers on requests to organize, standardize, or restructure a repo.
 ---
 
 Invoke the `homelander` agent to audit and align the target repository.
@@ -21,11 +21,11 @@ Runs in 5 phases:
 
 | Phase | Name | Output |
 |-------|------|--------|
-| 1 | Discovery | Scans target repo, reads config files, summarizes current state |
-| 2 | Audit | Gap report with `[CRITICAL]` / `[MAJOR]` / `[MINOR]` findings |
+| 1 | Discovery | Scans target repo, detects framework (React / Astro / Next.js), reads config files, summarizes current state |
+| 2 | Audit | Gap report with `[CRITICAL]` / `[MAJOR]` / `[MINOR]` findings against the detected framework's standard |
 | 3 | Migration Plan | Tables of all folder creates, file moves, import updates — **HUMAN GATE** |
 | 4 | Execute | Applies all confirmed changes, runs formatter + linter |
-| 5 | Verify | Lint check, optional build check, final summary |
+| 5 | Verify | Lint check, optional build check, final summary + git-agent commit suggestion |
 
 ## Example
 
