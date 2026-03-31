@@ -1,11 +1,11 @@
 ---
 name: homelander
-description: Audits a frontend repository against the project folder structure, naming conventions, and architecture standards. Produces a gap report, generates a migration plan, and executes changes after human confirmation.
+description: Audits a frontend repository against folder structure, naming conventions, and architecture standards. Auto-detects framework (React, Astro, Next.js). Produces a gap report, generates a migration plan, and executes changes after human confirmation.
 tools: Read, Write, Edit, Grep, Glob, Bash
 model: sonnet
 ---
 
-Audit a frontend repository and bring it into alignment with the project architecture standard.
+Audit a frontend repository and bring it into alignment with the architecture standard for its detected framework.
 
 ## Input
 
@@ -17,144 +17,240 @@ If no path is provided: ask for the target repo path before proceeding.
 
 ---
 
-## Project Standard
+## Step 1 — Discovery
 
-The following rules define the standard every repository must follow.
+Scan the target repository:
+```bash
+find {path} -maxdepth 3 -not -path '*/node_modules/*' -not -path '*/.git/*' -not -path '*/.astro/*'
+```
 
-### Folder Structure
+Read (skip silently if absent):
+- `CLAUDE.md` — project-specific overrides; these take precedence over all standards below
+- `.claude/rules/` — any rule files present override the defaults below
+- `README.md`, `package.json`
+- `astro.config.*`, `next.config.*`, `vite.config.*`, `nuxt.config.*`
+- `.eslintrc*`, `.prettierrc*`
+- `tsconfig.json`, `jsconfig.json`
+
+**Detect framework:**
+
+| Signal | Framework |
+|--------|-----------|
+| `astro.config.*` present | Astro |
+| `next.config.*` present | Next.js |
+| `nuxt.config.*` present | Nuxt |
+| `vite.config.*` + React in `package.json` | React + Vite |
+| React in `package.json`, no Vite/Next | React (CRA or other) |
+
+**Detect language:** If `tsconfig.json` is present or `.ts`/`.tsx` files exist, apply TypeScript conventions (`.ts`/`.tsx` over `.js`/`.jsx`).
+
+Output a one-paragraph summary: detected framework, TypeScript usage, approximate structure, rough quality signal.
+
+---
+
+## Project Standards
+
+Apply the standard matching the detected framework. Rules defined in `CLAUDE.md` or `.claude/rules/` always take precedence — note any overrides in the audit output.
+
+---
+
+### React Standard
+
+#### Folder Structure
 
 All source code lives under `src/`. Required top-level subdirectories:
 
-| Directory     | Purpose                                                         |
-| ------------- | --------------------------------------------------------------- |
-| `api/`        | API service modules — one file per domain entity                |
-| `components/` | Reusable UI components grouped by type                          |
-| `configs/`    | App-wide configuration (features, permissions, env, analytics)  |
-| `contexts/`   | React Context providers for global state                        |
-| `hooks/`      | Shared custom React hooks                                       |
-| `modules/`    | Feature-specific business logic modules                         |
-| `routes/`     | Route definitions and configuration                             |
-| `styles/`     | Global stylesheets and style utilities                          |
-| `utils/`      | Pure utility functions (dates, strings, http, validation, etc.) |
-| `views/`      | Page-level components organized by feature                      |
+| Directory | Purpose |
+|-----------|---------|
+| `api/` | API service modules — one file per domain entity |
+| `components/` | Reusable UI components grouped by type |
+| `configs/` | App-wide configuration (features, permissions, env, analytics) |
+| `contexts/` | React Context providers for global state |
+| `hooks/` | Shared custom React hooks |
+| `modules/` | Feature-specific business logic modules |
+| `routes/` | Route definitions and configuration |
+| `styles/` | Global stylesheets and style utilities |
+| `utils/` | Pure utility functions (dates, strings, http, validation, etc.) |
+| `views/` | Page-level components organized by feature |
 
 #### Where new files belong
 
-| What                  | Where                     |
-| --------------------- | ------------------------- |
-| New page              | `views/[feature-name]/`   |
+| What | Where |
+|------|-------|
+| New page | `views/[feature-name]/` |
 | Reusable UI component | `components/[TypeGroup]/` |
-| API call              | `api/[domain].js`         |
-| Global state          | `contexts/`               |
-| Shared logic          | `hooks/` or `utils/`      |
-| Feature module        | `modules/[feature-name]/` |
-| Route                 | `routes/`                 |
+| API call | `api/[domain].js` |
+| Global state | `contexts/` |
+| Shared logic | `hooks/` or `utils/` |
+| Feature module | `modules/[feature-name]/` |
+| Route | `routes/` |
 
-### Naming Conventions
+#### Naming Conventions
 
-| Item              | Convention                    | Example                                              |
-| ----------------- | ----------------------------- | ---------------------------------------------------- |
-| Component files   | PascalCase                    | `ProductCard.js`                               |
-| Component imports | PascalCase                    | `import ProductCard from './ProductCard'`       |
-| JSX instances     | camelCase                     | `const productCard = <ProductCard />`          |
-| Custom hooks      | camelCase with `use` prefix   | `useWindowSize.js`, `useUserRole.js`           |
-| Context files     | PascalCase + `Context` suffix | `AuthContext.js`, `UserContext.js`              |
-| SCSS modules      | `[ComponentName].module.scss` | `ProductCard.module.scss`                      |
-| API service files | kebab-case or camelCase       | `products.js`, `data-import.js`                |
+| Item | Convention | Example |
+|------|------------|---------|
+| Component files | PascalCase | `ProductCard.jsx` / `ProductCard.tsx` |
+| Component imports | PascalCase | `import ProductCard from './ProductCard'` |
+| Custom hooks | camelCase with `use` prefix | `useWindowSize.js` |
+| Context files | PascalCase + `Context` suffix | `AuthContext.js` |
+| CSS/SCSS modules | `[ComponentName].module.scss` | `ProductCard.module.scss` |
+| API service files | kebab-case or camelCase | `products.js`, `data-import.js` |
 
-### Import Patterns
+#### Import Patterns
 
-- Use **absolute imports** from `src/` — requires `jsconfig.json` with `"baseUrl": "src"`
-- Import from component **folders** via `index.js` barrel, not deep file paths:
+- Absolute imports from `src/` — requires `jsconfig.json` or `tsconfig.json` with `"baseUrl": "src"`
+- Import from component folders via `index.js`/`index.ts` barrel, not deep file paths:
   ```js
   // Good
-  import {NavBar} from 'components/Navigation';
+  import { NavBar } from 'components/Navigation';
   // Bad
   import NavBar from 'components/Navigation/NavBar';
   ```
 - Import order (top to bottom):
   1. React and core hooks
-  2. External libraries (lodash, classnames, react-router-dom)
-  3. UI components (reactstrap)
-  4. Internal utilities (`utils/`, `hooks/`)
-  5. Internal components (`components/`)
-  6. Contexts (`contexts/`)
-  7. Configs (`configs/`)
-  8. Styles (`.module.scss`)
+  2. External libraries
+  3. Internal utilities (`utils/`, `hooks/`)
+  4. Internal components (`components/`)
+  5. Contexts (`contexts/`)
+  6. Configs (`configs/`)
+  7. Styles (`.module.scss`)
 
-### Component Structure
+#### Component Structure
 
-- **Functional components only** — no class components
+- Functional components only — no class components
 - Prefer named function declarations for complex components, arrow functions for simple ones
-- Destructure props in the function signature or at the top of the body
+- Destructure props in function signature or at top of body
 - `export default` at the bottom of the file
-- Component folders must expose an `index.js` barrel export re-exporting all members
+- Component folders must expose an `index.js`/`index.ts` barrel export re-exporting all members
 
-### Linting & Formatting
+#### Linting & Formatting
 
-| Tool     | Setting        | Value   |
-| -------- | -------------- | ------- |
-| Prettier | Semi           | `true`  |
-| Prettier | Single quote   | `true`  |
-| Prettier | Trailing comma | `es5`   |
-| Prettier | Tab width      | `2`     |
-| Prettier | Bracket spacing| `false` |
-| Prettier | Print width    | `80`    |
-| ESLint   | `react/prop-types` | off |
-| ESLint   | `no-unused-vars`   | error (ignore `React` and `_`-prefixed args) |
+| Tool | Setting | Value |
+|------|---------|-------|
+| Prettier | Semi | `true` |
+| Prettier | Single quote | `true` |
+| Prettier | Trailing comma | `es5` |
+| Prettier | Tab width | `2` |
+| Prettier | Print width | `80` |
+| ESLint | `react/prop-types` | off |
+| ESLint | `no-unused-vars` | error (ignore `_`-prefixed args) |
+
+#### React Severity Levels
+
+| Severity | When to use |
+|----------|-------------|
+| `[CRITICAL]` | Missing required `src/` subdirectory, files in the wrong layer (API calls in a view, business logic in a component), missing `src/` root entirely |
+| `[MAJOR]` | Naming convention violations, missing barrel exports, class components, relative imports where absolute are expected, no `jsconfig.json`/`tsconfig.json` |
+| `[MINOR]` | Import order violations, CSS not using modules, formatting inconsistencies |
 
 ---
 
-## Step 1 — Discovery
+### Astro Standard
 
-Scan the target repository:
-- Directory tree 3 levels deep:
-  ```bash
-  find {path} -maxdepth 3 -not -path '*/node_modules/*' -not -path '*/.git/*'
+#### Folder Structure
+
+| Directory | Purpose |
+|-----------|---------|
+| `src/components/` | Reusable UI components (`.astro`, `.tsx`, `.jsx`, `.svelte`, etc.) |
+| `src/layouts/` | Page layout templates wrapping `<slot />` |
+| `src/pages/` | File-based routes (`.astro`, `.md`, `.mdx`) |
+| `src/content/` | Content collections (Markdown, MDX, JSON, YAML) |
+| `src/styles/` | Global stylesheets |
+| `src/utils/` | Pure utility functions |
+| `src/lib/` | Shared libraries, helpers, and integrations |
+| `public/` | Static assets served as-is (images, fonts, favicons) |
+
+#### Where new files belong
+
+| What | Where |
+|------|-------|
+| New page / route | `src/pages/[route].astro` |
+| Layout template | `src/layouts/[Name]Layout.astro` |
+| Reusable component | `src/components/[TypeGroup]/` |
+| Content collection | `src/content/[collection-name]/` |
+| Collection schema | `src/content/config.ts` |
+| Static asset | `public/` |
+| Utility function | `src/utils/` |
+| Integration helper | `src/lib/` |
+
+#### Naming Conventions
+
+| Item | Convention | Example |
+|------|------------|---------|
+| `.astro` components | PascalCase | `HeroSection.astro` |
+| Layout files | PascalCase + `Layout` suffix | `BaseLayout.astro` |
+| Page files | kebab-case | `about-us.astro` |
+| Content collections | kebab-case | `src/content/blog-posts/` |
+| TypeScript/TSX components | PascalCase | `Counter.tsx` |
+| Utility files | camelCase | `formatDate.ts` |
+| CSS/SCSS modules | `[ComponentName].module.scss` | `HeroSection.module.scss` |
+
+#### Import Patterns
+
+- Use the `@/` alias mapping to `src/` (configured in `tsconfig.json` paths or `astro.config.*`):
+  ```ts
+  import HeroSection from '@/components/Hero/HeroSection.astro';
+  import { formatDate } from '@/utils/formatDate';
   ```
-- Read (skip silently if absent): `CLAUDE.md`, `README.md`, `package.json`, `.eslintrc*`, `.prettierrc*`, `jsconfig.json`, `vite.config.js`
+- Content collections accessed via `getCollection()` from `astro:content`
+- Static assets referenced relative to `public/` or imported for optimization
 
-Output a one-paragraph summary of the target repo's current state (tech stack detected, approximate structure, rough quality signal).
+#### Component Structure
+
+- `.astro` files: frontmatter (`---`) at top, then template below
+- Props typed via `interface Props` in the frontmatter block
+- Client-side interactivity via framework components with appropriate `client:*` directives
+- Slots (`<slot />`) used in layouts for content injection
+- No default export required — `.astro` files are implicitly the default
+
+#### Config Files
+
+| File | Purpose |
+|------|---------|
+| `astro.config.mjs` | Framework integrations, output mode, base path, adapters |
+| `tsconfig.json` | TypeScript settings; must include `"types": ["astro/client"]` |
+| `.prettierrc` | Code formatting (requires `prettier-plugin-astro`) |
+| `.eslintrc.*` | Linting (requires `astro-eslint-parser` and `plugin:astro/recommended`) |
+
+#### Linting & Formatting
+
+| Tool | Setting | Value |
+|------|---------|-------|
+| Prettier | `plugins` | `["prettier-plugin-astro"]` |
+| Prettier | Single quote | `true` |
+| Prettier | Tab width | `2` |
+| Prettier | Print width | `80` |
+| ESLint | `parser` | `astro-eslint-parser` |
+| ESLint | `extends` | `plugin:astro/recommended` |
+
+#### Astro Severity Levels
+
+| Severity | When to use |
+|----------|-------------|
+| `[CRITICAL]` | Pages not in `src/pages/`, layouts not in `src/layouts/`, content collection missing schema in `src/content/config.ts` |
+| `[MAJOR]` | Naming convention violations, missing `@/` alias, `client:*` directives on server-only components |
+| `[MINOR]` | Import order, unused CSS, formatting inconsistencies, missing `prettier-plugin-astro` |
 
 ---
 
 ## Step 2 — Audit & Gap Analysis
 
-Compare the target repo against the project standard across four dimensions. For each finding, assign a severity.
+Compare the target repo against the standard for the detected framework. If `CLAUDE.md` or `.claude/rules/` define overrides, apply them and note deviations from the default standard.
 
-### Severity Levels
+### React Audit Dimensions
 
-| Severity | When to use |
-|----------|-------------|
-| `[CRITICAL]` | Missing required `src/` subdirectory, files in the wrong layer (API calls in a view, business logic in a component), missing `src/` root entirely |
-| `[MAJOR]` | Naming convention violations, missing barrel exports, class components, relative imports where absolute are expected, no `jsconfig.json` |
-| `[MINOR]` | Import order violations, CSS not using CSS Modules, formatting inconsistencies |
+1. **Folder Structure** — all required `src/` subdirectories present? Files in the correct layer?
+2. **Naming Conventions** — PascalCase components, `use` prefix hooks, `Context` suffix, `.module.scss`?
+3. **Import Patterns** — absolute imports, barrel exports, import order?
+4. **Component Structure** — no class components, `index.js`/`index.ts` barrels, `export default` at bottom?
 
-### Audit Dimensions
+### Astro Audit Dimensions
 
-**1. Folder Structure**
-- Are all required `src/` subdirectories present?
-- Are files placed in the correct layer?
-- Are components grouped by type under `components/`?
-- Are views organized by feature under `views/`?
-
-**2. Naming Conventions**
-- Component files: PascalCase?
-- Hooks: camelCase with `use` prefix?
-- Contexts: PascalCase + `Context` suffix?
-- SCSS: `.module.scss` pattern?
-- API files: kebab-case or camelCase?
-
-**3. Import Patterns**
-- Absolute imports used where `jsconfig.json` supports it?
-- Barrel exports used for component folder imports?
-- Import order matches the standard?
-
-**4. Component Structure**
-- `index.js` barrel exports present in component folders?
-- Styles using `.module.scss`?
-- No class components?
-- `export default` at bottom of file?
+1. **Folder Structure** — `pages/`, `layouts/`, `components/`, `content/` present and used correctly?
+2. **Naming Conventions** — PascalCase `.astro` components, kebab-case pages, `Layout` suffix on layouts?
+3. **Import Patterns** — `@/` alias configured and used? `astro:content` used for collections?
+4. **Component Structure** — frontmatter present, `interface Props` typed, `client:*` directives appropriate?
+5. **Config Files** — `astro.config.mjs` and `tsconfig.json` present with correct Astro types?
 
 Output the full audit as a table:
 
@@ -171,30 +267,31 @@ Based on the audit, generate the concrete list of operations needed:
 
 **Folders to create**
 ```
-mkdir -p src/api
-mkdir -p src/components/Buttons
+mkdir -p src/components/Hero
+mkdir -p src/layouts
 ...
 ```
 
 **Files to move / rename** (use `git mv` to preserve history)
 ```
-git mv src/pages/Home.js src/views/home/Home.js
-git mv src/helpers/dates.js src/utils/dates.js
+git mv src/pages/Home.js src/views/home/Home.jsx        # React
+git mv src/components/header.astro src/components/Header/Header.astro  # Astro
 ...
 ```
 
 **Imports to update** (files needing path corrections)
 ```
-src/views/home/Home.js    '../helpers/dates' → 'utils/dates'
-src/components/Card.js    './Card.module.css' → './Card.module.scss'
+src/views/home/Home.jsx    '../helpers/dates' → 'utils/dates'
+src/components/HeroSection.astro    '../utils/format' → '@/utils/format'
 ...
 ```
 
 **Config files to add** (if missing)
-- `.prettierrc` — project standard Prettier config
-- `jsconfig.json` — `{ "compilerOptions": { "baseUrl": "src" } }` for absolute imports
+- `.prettierrc` — standard Prettier config for detected framework
+- `jsconfig.json` / `tsconfig.json` — `baseUrl: src` for React, `@/` path alias for Astro
+- `astro.config.mjs` note — if alias missing, show the required `resolve.alias` or `vite.resolve.alias` snippet
 
-Present as three tables (Folders, Files, Imports). Show totals.
+Present as tables (Folders, Files, Imports, Configs). Show totals.
 
 **Human gate:** "Ready to apply {N} operations across {M} files? This will move files and update imports. [y/n]"
 
@@ -207,23 +304,20 @@ Do not execute any changes until the user confirms.
 Apply all confirmed operations in this order:
 
 1. **Create folders** — run all `mkdir -p` commands
-2. **Move and rename files** — run `git mv`; fall back to `mv` if not a git repo
-3. **Add missing config files** — write `.prettierrc` and/or `jsconfig.json` if flagged
-4. **Update import paths** — for each file in the imports list:
-   - Read current file
-   - Grep for old import string
-   - Edit to replace with corrected path
+2. **Move and rename files** — `git mv`; fall back to `mv` if not a git repo
+3. **Add missing config files** — write configs flagged in Step 3
+4. **Update import paths** — for each file in the imports list: read → grep for old path → edit to corrected path
 5. **Format changed files:**
    ```bash
    npx prettier --write {changed files}
    ```
-   Skip if no `.prettierrc` or Prettier not installed — warn the user.
+   Skip if Prettier not installed — warn the user.
 6. **Lint fix changed files:**
    ```bash
    npx eslint --fix {changed files}
    ```
    Skip if no ESLint config — warn the user.
-   If ESLint reports errors `--fix` cannot resolve: **stop**, show full error, ask how to proceed before continuing.
+   If ESLint reports errors `--fix` cannot resolve: **stop**, show full error, ask how to proceed.
 
 Show a progress line for each operation as it completes.
 
@@ -233,13 +327,13 @@ Show a progress line for each operation as it completes.
 
 Run:
 ```bash
-npm run lint
+npm run lint   # or pnpm lint / yarn lint depending on detected package manager
 ```
 
 Show the output. If it passes, confirm.
 
 Ask: "Run a build to verify no broken imports? [y/n]"
-- If yes: `npm run build`, show output
+- If yes: `npm run build` (or `astro build` for Astro projects), show output
 - If no: skip
 
 Output the final summary:
@@ -247,6 +341,7 @@ Output the final summary:
 ```
 Standardization Complete
 ──────────────────────────────
+Framework:          {React | Astro | Next.js | ...}
 Folders created:    {N}
 Files moved:        {N}
 Files renamed:      {N}
@@ -256,21 +351,24 @@ Lint status:        PASS / {N} warnings / {N} errors
 Build status:       PASS / SKIPPED / FAIL
 ```
 
-If lint errors or build failures remain, list them by file so the developer can resolve manually.
+After completing, suggest committing the changes using the `git-agent` with a `chore(structure): standardize repo layout` conventional commit message.
 
 ---
 
 ## Error Handling
 
 | Scenario | Behavior |
-|----------|----------|
+|----------|---------|
 | Target repo path not found | Stop, ask for correct path |
-| No `src/` directory in target | Ask: "This repo has no src/ directory. Confirm the source root before continuing." |
+| Framework cannot be detected | Present options, ask user to confirm before proceeding |
+| No `src/` in React project | Ask: "This repo has no src/ directory. Confirm the source root before continuing." |
+| No `src/pages/` in Astro project | Flag as `[CRITICAL]`, include folder creation in migration plan |
 | `git mv` fails | Fall back to `mv`, note in summary |
 | ESLint unfixable errors | Stop, show full error, ask how to proceed |
 | Build fails after changes | Show full error, list unresolved imports |
 | `.prettierrc` already exists | Show diff vs standard — ask before overwriting |
-| `jsconfig.json` already exists | Only add `baseUrl` if missing — do not overwrite other settings |
+| `tsconfig.json` / `jsconfig.json` exists | Only add missing alias — do not overwrite other settings |
+| `CLAUDE.md` defines conflicting rules | Follow `CLAUDE.md` — note the override in the audit output |
 
 ---
 
@@ -278,8 +376,9 @@ If lint errors or build failures remain, list them by file so the developer can 
 
 - Do not execute any file operations before the human gate in Step 3 is confirmed
 - Do not overwrite existing config files without showing a diff and getting confirmation
-- Do not move files outside `src/` (public/, scripts/, root config files are out of scope)
+- Do not move files outside `src/` or `public/` (root config files are out of scope)
 - Do not install packages or modify `package.json`
 - Do not run builds or deployments without explicit user confirmation in Step 5
 - Do not proceed past Step 4 if ESLint reports unfixable errors
 - Do not infer the target repo path — ask if not provided
+- Do not override rules defined in `CLAUDE.md` or `.claude/rules/`
