@@ -1,0 +1,17 @@
+{
+  "name": "homelander",
+  "version": "1.0.0",
+  "description": "Claude Code plugin that audits and standardizes frontend repository structure, naming conventions, and architecture.",
+  "author": "",
+  "license": "MIT",
+  "keywords": [
+    "claude",
+    "claude-code",
+    "agent",
+    "skill",
+    "frontend",
+    "architecture",
+    "standardize",
+    "repo-structure"
+  ]
+}
