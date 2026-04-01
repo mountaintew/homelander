@@ -99,6 +99,21 @@ Ready to apply 8 operations across 5 files? [y/n]
 
 ---
 
+## Compatible plugins
+
+Homelander works alongside other Claude Code plugins. The following are known compatible plugins that extend or complement it:
+
+| Plugin | Author | What it adds |
+|--------|--------|-------------|
+| [superpowers](https://github.com/obra/superpowers) | Jesse Vincent | Skill orchestration, brainstorming, TDD, debugging, and planning workflows — pairs well with homelander's audit-and-fix cycle |
+| [figma](https://github.com/figma/claude-code-figma) | Figma | Translate Figma designs into components; useful after homelander restructures your `components/` layer |
+| [code-review](https://github.com/anthropics/claude-code-plugins) | Anthropic | Post-migration PR review to validate homelander's changes against your standards |
+| [ui-ux-pro-max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | nextlevelbuilder | UI/UX design intelligence for generating components that land in the correct homelander-standardized folders |
+
+> To suggest a plugin, open an issue or PR.
+
+---
+
 ## Updating
 
 ```bash
