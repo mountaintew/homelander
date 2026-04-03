@@ -60,6 +60,28 @@ Receives from the homelander orchestrator:
 
 > **Subfolder rule:** Every directory inside `src/components/` must be PascalCase. Lowercase or mixed-case subfolder names (e.g. `admin/`, `navbar/`, `transition/`) are a `[MAJOR]` violation regardless of their contents.
 
+### Component Grouping
+
+**Prefix rule:** When two or more components share a name prefix, group them into a PascalCase folder named after that shared prefix.
+- `HeroSection.astro` + `HeroHeading.tsx` → `Hero/`
+- `SectionLayout.astro` + `SectionTitle.astro` → `Section/`
+- `BadgeIcon.astro` + `BadgeAward.tsx` → `Badge/`
+
+**Rename to match folder:** When a component is moved into a prefix-named folder, rename it so the shared prefix comes first.
+- `AwardBadge.tsx` moved into `Badge/` → rename to `BadgeAward.tsx`
+
+**Special purpose folders:** Reserved names with fixed semantic meaning:
+
+| Folder | Purpose |
+|--------|---------|
+| `Modules/` | Components present on every page (global shell: Navbar, Footer, etc.) |
+| `Pages/` | Page-specific section components — not reused across routes |
+| `Assets/` | Decorative or purely visual components (mascots, floats, illustrations) |
+
+**Root singles:** Components with no siblings and no shared prefix with other components stay at the `components/` root. Do not create a folder for a single component.
+
+---
+
 ### Import Patterns
 
 - Use the `@/` alias mapping to `src/` (configured in `tsconfig.json` paths or `astro.config.*`):
@@ -103,8 +125,8 @@ Receives from the homelander orchestrator:
 | Severity | When to use |
 |----------|-------------|
 | `[CRITICAL]` | Pages not in `src/pages/`, layouts not in `src/layouts/`, content collection missing schema in `src/content/config.ts` |
-| `[MAJOR]` | Naming convention violations (including non-PascalCase component subfolders), missing `@/` alias, `client:*` directives on server-only components |
-| `[MINOR]` | Import order, unused CSS, formatting inconsistencies, missing `prettier-plugin-astro` |
+| `[MAJOR]` | Naming convention violations (including non-PascalCase component subfolders), missing `@/` alias, `client:*` directives on server-only components, non-global component placed inside `Modules/` |
+| `[MINOR]` | Import order, unused CSS, formatting inconsistencies, missing `prettier-plugin-astro`, two or more components sharing a prefix not grouped into a folder, component name not matching the prefix folder it lives in, page-specific section component outside `Pages/` |
 
 ---
 
@@ -112,9 +134,10 @@ Receives from the homelander orchestrator:
 
 1. **Folder Structure** — `pages/`, `layouts/`, `components/`, `content/` present and used correctly?
 2. **Naming Conventions** — PascalCase `.astro` components and component subfolders, kebab-case pages, `Layout` suffix on layouts, `use` prefix on hooks?
-3. **Import Patterns** — `@/` alias configured and used? `astro:content` used for collections?
-4. **Component Structure** — frontmatter present, `interface Props` typed, `client:*` directives appropriate?
-5. **Config Files** — `astro.config.mjs` and `tsconfig.json` present with correct Astro types?
+3. **Component Grouping** — components sharing a name prefix grouped into a matching folder? Names match their folder prefix? `Modules/` contains only global-shell components? `Pages/` used for page-specific sections? `Assets/` for decorative components? Root singles not wrapped in unnecessary folders?
+4. **Import Patterns** — `@/` alias configured and used? `astro:content` used for collections?
+5. **Component Structure** — frontmatter present, `interface Props` typed, `client:*` directives appropriate?
+6. **Config Files** — `astro.config.mjs` and `tsconfig.json` present with correct Astro types?
 
 ---
 
