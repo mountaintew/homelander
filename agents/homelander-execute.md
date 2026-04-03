@@ -20,7 +20,13 @@ Receives from the homelander orchestrator:
 ## Execution Order
 
 1. **Create folders** — run all `mkdir -p` commands
-2. **Move and rename files** — use `git mv`; fall back to `mv` if not a git repo
+2. **Move and rename files** — use `git mv`; fall back to `mv` if not a git repo.
+   **Case-only folder renames on macOS** (e.g. `admin/` → `Admin/`): the filesystem is case-insensitive so a direct rename silently fails. Always use a two-step temp rename:
+   ```bash
+   git mv src/components/admin src/components/_admin_tmp
+   git mv src/components/_admin_tmp src/components/Admin
+   ```
+   Apply this pattern for every folder rename where only the case changes.
 3. **Add missing config files** — write any configs flagged in the migration plan
 4. **Update import paths** — for each file: read → grep for old path → edit to corrected path
 5. **Format changed files:**
@@ -44,6 +50,7 @@ Show a progress line for each operation as it completes.
 | Scenario | Behavior |
 |----------|---------|
 | `git mv` fails | Fall back to `mv`, note in output |
+| Case-only folder rename fails (macOS) | Use two-step temp rename: `git mv foo _foo_tmp && git mv _foo_tmp Foo` |
 | Config file already exists | Show diff vs standard — ask before overwriting |
 | `tsconfig.json` / `jsconfig.json` exists | Only add missing alias — do not overwrite other settings |
 | ESLint unfixable errors | Stop, show full error, return error state |

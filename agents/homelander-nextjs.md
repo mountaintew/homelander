@@ -90,6 +90,7 @@ All source code lives under `src/`. Required top-level subdirectories:
 | Item | Convention | Example |
 |------|------------|---------|
 | Component files | PascalCase | `ProductCard.tsx` |
+| **Component subfolders** | **PascalCase** | `src/components/Navigation/`, `src/components/Forms/` |
 | Page files (Pages Router) | `index.tsx` in kebab-case folder | `src/pages/product-list/index.tsx` |
 | Page files (App Router) | `page.tsx` in kebab-case segment | `src/app/product-list/page.tsx` |
 | Custom hooks | camelCase with `use` prefix | `useProductList.tsx` |
@@ -99,6 +100,8 @@ All source code lives under `src/`. Required top-level subdirectories:
 | Type declaration files | descriptive | `src/types/table.d.ts` |
 | Feature module folders | kebab-case | `src/modules/product-list/` |
 | Error pages | numeric filename | `src/pages/404.tsx` |
+
+> **Subfolder rule:** Every directory inside `src/components/` must be PascalCase. Lowercase or mixed-case subfolder names (e.g. `auth/`, `ui/`, `forms/`) are a `[MAJOR]` violation regardless of their contents.
 
 ### Import Patterns
 

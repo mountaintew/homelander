@@ -55,10 +55,13 @@ All file extensions reflect the detected language: `.js`/`.jsx` for JavaScript, 
 |------|------------|---------|
 | Component files | PascalCase | `ProductCard.jsx` (JS) / `ProductCard.tsx` (TS) |
 | Component imports | PascalCase | `import ProductCard from './ProductCard'` |
+| **Component subfolders** | **PascalCase** | `components/Navigation/`, `components/Forms/` |
 | Custom hooks | camelCase with `use` prefix | `useWindowSize.js` (JS) / `useWindowSize.ts` (TS) |
 | Context files | PascalCase + `Context` suffix | `AuthContext.js` (JS) / `AuthContext.ts` (TS) |
 | CSS/SCSS modules | `[ComponentName].module.scss` | `ProductCard.module.scss` |
 | API service files | kebab-case or camelCase | `products.js` (JS) / `products.ts` (TS) |
+
+> **Subfolder rule:** Every directory inside `components/` must be PascalCase. Lowercase or mixed-case subfolder names (e.g. `auth/`, `ui/`, `forms/`) are a `[MAJOR]` violation regardless of their contents.
 
 ### Import Patterns
 
