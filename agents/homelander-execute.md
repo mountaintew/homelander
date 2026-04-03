@@ -28,7 +28,14 @@ Receives from the homelander orchestrator:
    ```
    Apply this pattern for every folder rename where only the case changes.
 3. **Add missing config files** — write any configs flagged in the migration plan
-4. **Update import paths** — for each file: read → grep for old path → edit to corrected path
+4. **Update import paths** — two passes, in this order:
+
+   **Pass A — Internal imports (inside moved files):** For every file that was moved or renamed, read it and recalculate each relative import path based on the new file location. A relative import that was correct at the old depth is often wrong at the new depth.
+   - Example: `Hero.astro` moves from `components/` → `components/Hero/`. Its import `./AnimatedLink` must become `../AnimatedLink` because the file is now one level deeper.
+   - Rule: for each relative import in a moved file, resolve the import target against the **old** file location, then re-express that same target as a relative path from the **new** file location.
+   - Do this for every `./` and `../` import in every moved file before touching external files.
+
+   **Pass B — External importers:** For each file that was moved or renamed, grep the codebase for every import referencing the old path and update it to the new path.
 5. **Format changed files:**
    ```bash
    npx prettier --write {changed files}
@@ -53,6 +60,7 @@ Show a progress line for each operation as it completes.
 | Case-only folder rename fails (macOS) | Use two-step temp rename: `git mv foo _foo_tmp && git mv _foo_tmp Foo` |
 | Config file already exists | Show diff vs standard — ask before overwriting |
 | `tsconfig.json` / `jsconfig.json` exists | Only add missing alias — do not overwrite other settings |
+| Relative import in moved file still points to old depth | Recompute path from new location (Pass A) — never skip internal imports |
 | ESLint unfixable errors | Stop, show full error, return error state |
 
 ---
