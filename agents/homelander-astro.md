@@ -55,6 +55,10 @@ Receives from the homelander orchestrator:
 | TypeScript/TSX components | PascalCase | `Counter.tsx` |
 | Utility files | camelCase | `formatDate.ts` |
 | CSS/SCSS modules | `[ComponentName].module.scss` | `HeroSection.module.scss` |
+| **Component subfolders** | **PascalCase** | `src/components/Navbar/`, `src/components/Admin/` |
+| Hook files | camelCase with `use` prefix | `useThemeToggle.ts` |
+
+> **Subfolder rule:** Every directory inside `src/components/` must be PascalCase. Lowercase or mixed-case subfolder names (e.g. `admin/`, `navbar/`, `transition/`) are a `[MAJOR]` violation regardless of their contents.
 
 ### Import Patterns
 
@@ -99,7 +103,7 @@ Receives from the homelander orchestrator:
 | Severity | When to use |
 |----------|-------------|
 | `[CRITICAL]` | Pages not in `src/pages/`, layouts not in `src/layouts/`, content collection missing schema in `src/content/config.ts` |
-| `[MAJOR]` | Naming convention violations, missing `@/` alias, `client:*` directives on server-only components |
+| `[MAJOR]` | Naming convention violations (including non-PascalCase component subfolders), missing `@/` alias, `client:*` directives on server-only components |
 | `[MINOR]` | Import order, unused CSS, formatting inconsistencies, missing `prettier-plugin-astro` |
 
 ---
@@ -107,7 +111,7 @@ Receives from the homelander orchestrator:
 ## Audit Dimensions
 
 1. **Folder Structure** — `pages/`, `layouts/`, `components/`, `content/` present and used correctly?
-2. **Naming Conventions** — PascalCase `.astro` components, kebab-case pages, `Layout` suffix on layouts?
+2. **Naming Conventions** — PascalCase `.astro` components and component subfolders, kebab-case pages, `Layout` suffix on layouts, `use` prefix on hooks?
 3. **Import Patterns** — `@/` alias configured and used? `astro:content` used for collections?
 4. **Component Structure** — frontmatter present, `interface Props` typed, `client:*` directives appropriate?
 5. **Config Files** — `astro.config.mjs` and `tsconfig.json` present with correct Astro types?
