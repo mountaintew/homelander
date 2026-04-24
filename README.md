@@ -41,7 +41,7 @@ Homelander runs in **5 phases**:
 
 ```bash
 # Add this repo as a marketplace
-cc plugin marketplace add github:your-username/homelander
+cc plugin marketplace add github:mountaintew/homelander
 
 # Install the plugin
 cc plugin install homelander@homelander
