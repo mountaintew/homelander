@@ -1,0 +1,17 @@
+{
+  "name": "homelander",
+  "owner": {
+    "name": "mountaintew"
+  },
+  "plugins": [
+    {
+      "name": "homelander",
+      "source": "./",
+      "description": "Audits and standardizes a frontend repository's folder structure, naming conventions, and architecture, with a human-gated migration plan.",
+      "version": "1.0.0",
+      "author": {
+        "name": "mountaintew"
+      }
+    }
+  ]
+}
