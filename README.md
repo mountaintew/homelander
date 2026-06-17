@@ -49,15 +49,43 @@ cc plugin install homelander@homelander
 
 ### Manual
 
-Copy the files into your Claude config directories:
+Copy the components into your Claude config directories:
 
 ```bash
-# Agent
-cp agents/homelander.md ~/.claude/agents/homelander.md
+# Agents (orchestrator + framework/phase subagents)
+cp agents/*.md ~/.claude/agents/
 
-# Skill
-cp skills/homelander.md ~/.claude/skills/homelander.md
+# Skill (a directory containing SKILL.md)
+mkdir -p ~/.claude/skills/homelander
+cp skills/homelander/SKILL.md ~/.claude/skills/homelander/SKILL.md
 ```
+
+---
+
+## Plugin structure
+
+Homelander is a Claude Code plugin: a repository whose root holds a `.claude-plugin/` manifest plus component directories that Claude Code discovers automatically. There is no build step.
+
+```text
+homelander/
+├── .claude-plugin/
+│   ├── plugin.json         # plugin manifest (name, version, description, author)
+│   └── marketplace.json    # single-plugin marketplace catalog (plugin source: "./")
+├── agents/                 # one .md per agent, frontmatter: name / description / tools / model
+│   ├── homelander.md       # orchestrator
+│   └── homelander-*.md     # framework + phase subagents
+└── skills/
+    └── homelander/
+        └── SKILL.md        # the /homelander skill, frontmatter: name / description
+```
+
+How the pieces fit, if you want to build your own:
+
+- **`.claude-plugin/plugin.json`** — the plugin manifest. Only `name` (kebab-case) is required; set `version` to pin releases (without it, every commit is treated as a new version).
+- **`.claude-plugin/marketplace.json`** — lets this same repo double as a one-plugin marketplace. The entry's `source: "./"` points the `homelander` plugin at the repo root (paths resolve relative to the directory containing `.claude-plugin/`), which is what makes `cc plugin marketplace add github:mountaintew/homelander` resolve.
+- **`agents/` and `skills/`** are auto-discovered on install — they do **not** need to be listed in `plugin.json`. Agents are flat `.md` files; a skill must be a directory containing `SKILL.md`.
+
+The marketplace name and plugin name are both `homelander`, so the install target is `homelander@homelander` (`plugin@marketplace`).
 
 ---
 
